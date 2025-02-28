@@ -1,11 +1,13 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Logger } from "@nestjs/common";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./order.dto";
-import { EventPattern, Payload } from "@nestjs/microservices";
+import { Ctx, EventPattern, MessagePattern, Payload, RmqContext } from "@nestjs/microservices";
 import { RabbitMqPatterns } from "../app.enums";
 
 @Controller('orders')
 export class OrderController {
+    private readonly logger = new Logger(OrderController.name);
+
     constructor(
         private readonly orderService: OrderService,
     ) { }
@@ -15,5 +17,13 @@ export class OrderController {
         @Payload() dto: CreateOrderDto
     ) {
         return this.orderService.handleCreateOrder(dto);
+    }
+
+    @MessagePattern({ cmd: RabbitMqPatterns.FETCH_ORDERS })
+    async handleFetchOrders(
+        @Ctx() context: RmqContext
+    ) {
+        //this.logger.log(context.getMessage());
+        return this.orderService.handleFetchOrders();
     }
 }
